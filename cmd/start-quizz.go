@@ -12,23 +12,17 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 )
 
 // getCmd represents the get command
 var getQuestionsCmd = &cobra.Command{
-	Use:   "getQuestions",
-	Short: "This command will retrieve the questions",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Use:   "start-quizz",
+	Short: "Run the start-quizz command to start the quizz.",
+	Long: ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		createNewNote()
+		
 		response, err := http.Get("http://localhost:8080/questions")
 		
 		if err != nil {
@@ -54,6 +48,7 @@ to quickly create a Cobra application.`,
 			if err := json.Unmarshal(b, &result); err != nil {  // Parse []byte to the go struct pointer
 				fmt.Println("Can not unmarshal JSON")
 			}
+			createNewNote(result)
 			//fmt.Printf(result[0].Question)
         } 
 	},
@@ -61,16 +56,6 @@ to quickly create a Cobra application.`,
 
 func init() {
 	rootCmd.AddCommand(getQuestionsCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// getCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// getCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 type promptContent struct {
@@ -110,7 +95,7 @@ func promptGetInput(pc promptContent) string {
     return result
 }
 
-func createNewNote() {
+func createNewNote(result []question) {
     // wordPromptContent := promptContent{
     //     "Please provide a number.",
     //     "What country has the highest life expectancy?",
@@ -119,9 +104,9 @@ func createNewNote() {
 
 	question1 := promptContent{
         "Please Try again",
-        fmt.Sprintf("With respect to the certification of airmen, which is a category of aircraft?"),
+        fmt.Sprintf(result[0].Question),
     }
-    answer1 := promptGetSelect(question1, []string{"A. Gyroplane, helicopter, airship, free balloon.", "B. Airplane, rotorcraft, glider, lighter-than-air.", "C. Single-engine land and sea, multiengine land and sea."})
+    answer1 := promptGetSelect(question1, []string{result[0].Choices[0].Choice,result[0].Choices[1].Choice,result[0].Choices[2].Choice})
 
 	fmt.Printf(answer1)
 
