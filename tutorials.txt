@@ -1,0 +1,2 @@
+https://dev.to/aurelievache/learning-go-by-examples-part-3-create-a-cli-app-in-go-1h43
+https://dev.to/divrhino/building-an-interactive-cli-app-with-go-cobra-promptui-346n

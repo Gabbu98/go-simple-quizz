@@ -44,11 +44,11 @@ var getQuestionsCmd = &cobra.Command{
 				}
             // fmt.Println(string(b))
 
-			var result []question
-			if err := json.Unmarshal(b, &result); err != nil {  // Parse []byte to the go struct pointer
+			var quizz []question
+			if err := json.Unmarshal(b, &quizz); err != nil {  // Parse []byte to the go struct pointer
 				fmt.Println("Can not unmarshal JSON")
 			}
-			createNewNote(result)
+			createNewNote(quizz)
 			//fmt.Printf(result[0].Question)
         } 
 	},
@@ -95,20 +95,28 @@ func promptGetInput(pc promptContent) string {
     return result
 }
 
-func createNewNote(result []question) {
+func createNewNote(quizzResponse []question) {
     // wordPromptContent := promptContent{
     //     "Please provide a number.",
     //     "What country has the highest life expectancy?",
     // }
     // word := promptGetInput(wordPromptContent)
+    for _, quizz := range quizzResponse {
+        question1 := promptContent{
+            "Please Try again",
+            fmt.Sprintf(quizz.Question),
+        }
 
-	question1 := promptContent{
-        "Please Try again",
-        fmt.Sprintf(result[0].Question),
+        choices := []string{}
+
+        for _, choice := range quizz.Choices{
+            choices = append(choices, choice.Choice)
+        }
+
+        answer1 := promptGetSelect(question1, choices)
+
+        fmt.Printf(answer1)
     }
-    answer1 := promptGetSelect(question1, []string{result[0].Choices[0].Choice,result[0].Choices[1].Choice,result[0].Choices[2].Choice})
-
-	fmt.Printf(answer1)
 
 	// question2 := promptContent{
 	// 	"Please Try again",
