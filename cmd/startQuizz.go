@@ -14,22 +14,17 @@ import (
 // startQuizzCmd represents the startQuizz command
 var startQuizzCmd = &cobra.Command{
 	Use:   "startQuizz",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "The Quizz Api",
+	Long: `Run the startQuizz command to run the api for the quizz.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("startQuizz called")
+		fmt.Println("Quizz Api Starting called")
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(startQuizzCmd)
 	var router = gin.Default()
-	router.GET("/questions/:id", getQuestion1)
+	router.GET("/questions", getQuestions)
 	router.POST("/questions/:id", postAnswer)
 	router.Run("localhost:8080")
 	
@@ -81,8 +76,8 @@ var answers = []answer{
 	
 }
 
-func getQuestion1(c *gin.Context) {
-	c.IndentedJSON(http.StatusOK, questions[0])
+func getQuestions(c *gin.Context) {
+	c.IndentedJSON(http.StatusOK, questions)
 }
 
 // postAnswers
