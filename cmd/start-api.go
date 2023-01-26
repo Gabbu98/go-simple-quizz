@@ -18,13 +18,11 @@ var startQuizzCmd = &cobra.Command{
 		fmt.Println("Quizz Api Starting called")
 		var router = gin.Default()
 		router.GET("/questions", getQuestions)
-		router.POST("/questions/:id", postAnswer)
+		router.POST("/submit", postAnswer)
 		router.Run("localhost:8080")
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(startQuizzCmd)
-	
-
 }

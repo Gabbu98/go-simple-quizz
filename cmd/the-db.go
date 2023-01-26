@@ -22,7 +22,7 @@ type correctAnswer struct {
 
 type answer struct {
 	QuestionId int `json:"questionId"`
-	ChoiceId   int `json:"choiceId"`
+	ChoiceId   string `json:"choiceId"`
 }
 
 var database = []question{
@@ -109,16 +109,16 @@ var database = []question{
 }
 
 var correctAnswers = []answer{
-	{QuestionId: 1, ChoiceId: 2},
-	{QuestionId: 2, ChoiceId: 1},
-	{QuestionId: 3, ChoiceId: 3},
-	{QuestionId: 4, ChoiceId: 1},
-	{QuestionId: 5, ChoiceId: 1},
-	{QuestionId: 6, ChoiceId: 2},
-	{QuestionId: 7, ChoiceId: 3},
-	{QuestionId: 8, ChoiceId: 3},
-	{QuestionId: 9, ChoiceId: 3},
-	{QuestionId: 10, ChoiceId: 1},
+	{QuestionId: 1, ChoiceId: "2"},
+	{QuestionId: 2, ChoiceId: "1"},
+	{QuestionId: 3, ChoiceId: "3"},
+	{QuestionId: 4, ChoiceId: "1"},
+	{QuestionId: 5, ChoiceId: "1"},
+	{QuestionId: 6, ChoiceId: "2"},
+	{QuestionId: 7, ChoiceId: "3"},
+	{QuestionId: 8, ChoiceId: "3"},
+	{QuestionId: 9, ChoiceId: "3"},
+	{QuestionId: 10, ChoiceId: "1"},
 }
 
-var answers = []answer{}
+var answers = []string{}

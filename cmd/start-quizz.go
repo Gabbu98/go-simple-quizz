@@ -4,6 +4,7 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 )
@@ -20,37 +22,54 @@ import (
 var getQuestionsCmd = &cobra.Command{
 	Use:   "start-quizz",
 	Short: "Run the start-quizz command to start the quizz.",
-	Long: ``,
+	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		
+
 		response, err := http.Get("http://localhost:8080/questions")
-		
+
 		if err != nil {
-            fmt.Println(err)
+			fmt.Println(err)
 		}
 
 		defer response.Body.Close()
 
 		if response.StatusCode == 200 {
-            
-            if err != nil {
-                fmt.Println(err)
-            }
-            
+
+			if err != nil {
+				fmt.Println(err)
+			}
+
 			b, err := io.ReadAll(response.Body)
-				// b, err := ioutil.ReadAll(resp.Body)  Go.1.15 and earlier
-				if err != nil {
-					log.Fatalln(err)
-				}
-            // fmt.Println(string(b))
+			// b, err := ioutil.ReadAll(resp.Body)  Go.1.15 and earlier
+			if err != nil {
+				log.Fatalln(err)
+			}
+			// fmt.Println(string(b))
 
 			var quizz []question
-			if err := json.Unmarshal(b, &quizz); err != nil {  // Parse []byte to the go struct pointer
+			if err := json.Unmarshal(b, &quizz); err != nil { // Parse []byte to the go struct pointer
 				fmt.Println("Can not unmarshal JSON")
 			}
-			createNewNote(quizz)
+			answers := makeChoice(quizz)
+			body := []answer{}
+
+			for i := 0; i < len(answers); i++ {
+				ansObj := answer{
+					QuestionId: i,
+					ChoiceId:   answers[i],
+				}
+				body = append(body, ansObj)
+			}
+
+			postBody, err := json.Marshal(body)
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			http.Post("http://localhost:8080/submit", "application/json", bytes.NewBuffer(postBody))
 			//fmt.Printf(result[0].Question)
-        } 
+		}
 	},
 }
 
@@ -59,96 +78,86 @@ func init() {
 }
 
 type promptContent struct {
-    errorMsg string
-    label    string
+	errorMsg string
+	label    string
 }
 
 func promptGetInput(pc promptContent) string {
-    validate := func(input string) error {
-        if len(input) <= 0 {
-            return errors.New(pc.errorMsg)
-        }
-        return nil
-    }
+	validate := func(input string) error {
+		if len(input) <= 0 {
+			return errors.New(pc.errorMsg)
+		}
+		return nil
+	}
 
-    templates := &promptui.PromptTemplates{
-        Prompt:  "{{ . }} ",
-        Valid:   "{{ . | green }} ",
-        Invalid: "{{ . | red }} ",
-        Success: "{{ . | bold }} ",
-    }
+	templates := &promptui.PromptTemplates{
+		Prompt:  "{{ . }} ",
+		Valid:   "{{ . | green }} ",
+		Invalid: "{{ . | red }} ",
+		Success: "{{ . | bold }} ",
+	}
 
-    prompt := promptui.Prompt{
-        Label:     pc.label,
-        Templates: templates,
-        Validate:  validate,
-    }
+	prompt := promptui.Prompt{
+		Label:     pc.label,
+		Templates: templates,
+		Validate:  validate,
+	}
 
-    result, err := prompt.Run()
-    if err != nil {
-        fmt.Printf("Prompt failed %v\n", err)
-        os.Exit(1)
-    }
+	result, err := prompt.Run()
+	if err != nil {
+		fmt.Printf("Prompt failed %v\n", err)
+		os.Exit(1)
+	}
 
-    fmt.Printf("Input: %s\n", result)
+	fmt.Printf("Input: %s\n", result)
 
-    return result
+	return result
 }
 
-func createNewNote(quizzResponse []question) {
-    // wordPromptContent := promptContent{
-    //     "Please provide a number.",
-    //     "What country has the highest life expectancy?",
-    // }
-    // word := promptGetInput(wordPromptContent)
-    for _, quizz := range quizzResponse {
-        question1 := promptContent{
-            "Please Try again",
-            fmt.Sprintf(quizz.Question),
-        }
+func makeChoice(quizzResponse []question) []string {
+	for _, quizz := range quizzResponse {
+		question1 := promptContent{
+			"Please Try again",
+			fmt.Sprintf(quizz.Question),
+		}
 
-        choices := []string{}
+		choices := []string{}
 
-        for _, choice := range quizz.Choices{
-            choices = append(choices, choice.Choice)
-        }
+		for _, choice := range quizz.Choices {
+			choices = append(choices, choice.Choice)
+		}
 
-        answer1 := promptGetSelect(question1, choices)
+		answer := promptGetSelect(question1, choices)
 
-        fmt.Printf(answer1)
-    }
+		answers = append(answers, answer)
+	}
 
-	// question2 := promptContent{
-	// 	"Please Try again",
-    //     fmt.Sprintf("1. What country has the highest life expectancy?"),
-	// }
+	return answers
 }
 
 func promptGetSelect(pc promptContent, choices []string) string {
-    items := choices
-    index := -1
-    var result string
-    var err error
+	items := choices
+	index := -1
+	var result string
+	var err error
 
-    for index < 0 {
-        prompt := promptui.SelectWithAdd{
-            Label:    pc.label,
-            Items:    items,
-        }
+	for index < 0 {
+		prompt := promptui.SelectWithAdd{
+			Label: pc.label,
+			Items: items,
+		}
 
-        index, result, err = prompt.Run()
-		
-        if index == -1 {
-            items = append(items, result)
-        }
-    }
+		index, result, err = prompt.Run()
 
-    if err != nil {
-        fmt.Printf("Prompt failed %v\n", err)
-        os.Exit(1)
-    }
+		if index == -1 {
+			items = append(items, result)
+		}
+	}
 
-    fmt.Printf("Input: %s\n", strconv.Itoa(index))
+	if err != nil {
+		fmt.Printf("Prompt failed %v\n", err)
+		os.Exit(1)
+	}
 
-    return result
+	return strconv.Itoa(index+1)
 }
