@@ -25,6 +25,11 @@ type answer struct {
 	ChoiceId   string `json:"choiceId"`
 }
 
+type playerStruct struct {
+	Name string `json:"name"`
+	Score   int `json:"score"`
+}
+
 var database = []question{
 	{Id: 1,
 		Question: "With respect to the certification of airmen, which is a category of aircraft?", Choices: []Choice{
@@ -121,4 +126,10 @@ var correctAnswers = []answer{
 	{QuestionId: 10, ChoiceId: "1"},
 }
 
-var answers = []string{}
+var standings = []playerStruct{
+	{Name: "Geoff", Score: 60},
+	{Name: "Julian", Score: 70},
+	{Name: "Tina", Score: 80},
+	{Name: "Mary", Score: 10},
+	{Name: "Simon", Score: 40},
+}

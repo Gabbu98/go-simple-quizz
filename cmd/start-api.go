@@ -18,7 +18,7 @@ var startQuizzCmd = &cobra.Command{
 		fmt.Println("Quizz Api Starting called")
 		var router = gin.Default()
 		router.GET("/questions", getQuestions)
-		router.POST("/submit", postAnswer)
+		router.GET("/standings", getStandings)
 		router.Run("localhost:8080")
 	},
 }

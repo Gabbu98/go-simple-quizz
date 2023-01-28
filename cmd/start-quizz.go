@@ -4,14 +4,13 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"sort"
 	"strconv"
 
 	"github.com/manifoldco/promptui"
@@ -24,7 +23,10 @@ var getQuestionsCmd = &cobra.Command{
 	Short: "Run the start-quizz command to start the quizz.",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-
+		usernamePrompt := promptContent{
+			"Please enter your username",
+		}
+		username := promptGetInput(usernamePrompt)
 		response, err := http.Get("http://localhost:8080/questions")
 
 		if err != nil {
@@ -51,26 +53,67 @@ var getQuestionsCmd = &cobra.Command{
 				fmt.Println("Can not unmarshal JSON")
 			}
 			answers := makeChoice(quizz)
-			body := []answer{}
 
-			for i := 0; i < len(answers); i++ {
-				ansObj := answer{
-					QuestionId: i,
-					ChoiceId:   answers[i],
-				}
-				body = append(body, ansObj)
-			}
+			player := calculateScore(answers, username)
 
-			postBody, err := json.Marshal(body)
+			fmt.Println(player.Name + ":" + strconv.Itoa(player.Score))
 
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			http.Post("http://localhost:8080/submit", "application/json", bytes.NewBuffer(postBody))
-			//fmt.Printf(result[0].Question)
+			calculateStandings(player)
 		}
 	},
+}
+
+// calculate the score
+func calculateScore(answers []string, username string) playerStruct {
+
+	x := 0
+	for i := 0; i < len(correctAnswers); i++ {
+		if correctAnswers[i].ChoiceId == answers[i] {
+			x = x + 1
+		}
+	}
+	player := playerStruct{Name: username, Score: x * 10}
+	return player
+}
+
+func calculateStandings(player playerStruct) {
+	response, err := http.Get("http://localhost:8080/standings")
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	defer response.Body.Close()
+
+	if response.StatusCode == 200 {
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		b, err := io.ReadAll(response.Body)
+		// b, err := ioutil.ReadAll(resp.Body)  Go.1.15 and earlier
+		if err != nil {
+			log.Fatalln(err)
+		}
+		// fmt.Println(string(b))
+
+		var standings []playerStruct
+		if err := json.Unmarshal(b, &standings); err != nil { // Parse []byte to the go struct pointer
+			fmt.Println("Can not unmarshal JSON")
+		}
+		
+		standings = append(standings, player)
+
+		sort.SliceStable(standings, func(i, j int) bool{
+   			return standings[i].Score > standings[j].Score
+		})
+
+		fmt.Println("-------------------The Results------------------")
+		for i := 0; i < len(standings); i++ {
+			fmt.Println(strconv.Itoa(i+1)+") "+standings[i].Name+":"+strconv.Itoa(standings[i].Score))
+		} 
+	}
 }
 
 func init() {
@@ -78,29 +121,12 @@ func init() {
 }
 
 type promptContent struct {
-	errorMsg string
-	label    string
+	label string
 }
 
 func promptGetInput(pc promptContent) string {
-	validate := func(input string) error {
-		if len(input) <= 0 {
-			return errors.New(pc.errorMsg)
-		}
-		return nil
-	}
-
-	templates := &promptui.PromptTemplates{
-		Prompt:  "{{ . }} ",
-		Valid:   "{{ . | green }} ",
-		Invalid: "{{ . | red }} ",
-		Success: "{{ . | bold }} ",
-	}
-
 	prompt := promptui.Prompt{
-		Label:     pc.label,
-		Templates: templates,
-		Validate:  validate,
+		Label: pc.label,
 	}
 
 	result, err := prompt.Run()
@@ -109,15 +135,15 @@ func promptGetInput(pc promptContent) string {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Input: %s\n", result)
+	//fmt.Printf("Input: %s\n", result)
 
 	return result
 }
 
 func makeChoice(quizzResponse []question) []string {
+	var answers = []string{}
 	for _, quizz := range quizzResponse {
 		question1 := promptContent{
-			"Please Try again",
 			fmt.Sprintf(quizz.Question),
 		}
 
@@ -159,5 +185,5 @@ func promptGetSelect(pc promptContent, choices []string) string {
 		os.Exit(1)
 	}
 
-	return strconv.Itoa(index+1)
+	return strconv.Itoa(index + 1)
 }
