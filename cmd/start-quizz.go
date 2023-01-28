@@ -23,33 +23,26 @@ var getQuestionsCmd = &cobra.Command{
 	Short: "Run the start-quizz command to start the quizz.",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
+
 		usernamePrompt := promptContent{
 			"Please enter your username",
 		}
 		username := promptGetInput(usernamePrompt)
+
 		response, err := http.Get("http://localhost:8080/questions")
 
-		if err != nil {
-			fmt.Println(err)
-		}
+		PrintError(err)
 
 		defer response.Body.Close()
 
 		if response.StatusCode == 200 {
 
-			if err != nil {
-				fmt.Println(err)
-			}
+			PrintError(err)
 
-			b, err := io.ReadAll(response.Body)
-			// b, err := ioutil.ReadAll(resp.Body)  Go.1.15 and earlier
-			if err != nil {
-				log.Fatalln(err)
-			}
-			// fmt.Println(string(b))
+			b := RespErr(response)
 
 			var quizz []question
-			if err := json.Unmarshal(b, &quizz); err != nil { // Parse []byte to the go struct pointer
+			if err := json.Unmarshal(b, &quizz); err != nil {
 				fmt.Println("Can not unmarshal JSON")
 			}
 			answers := makeChoice(quizz)
@@ -62,6 +55,21 @@ var getQuestionsCmd = &cobra.Command{
 		}
 	},
 }
+
+func RespErr(response *http.Response) []byte{
+	b, err := io.ReadAll(response.Body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	return b
+}
+
+func PrintError(err error){
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
 
 // calculate the score
 func calculateScore(answers []string, username string) playerStruct {
@@ -79,40 +87,31 @@ func calculateScore(answers []string, username string) playerStruct {
 func calculateStandings(player playerStruct) {
 	response, err := http.Get("http://localhost:8080/standings")
 
-	if err != nil {
-		fmt.Println(err)
-	}
+	PrintError(err)
 
 	defer response.Body.Close()
 
 	if response.StatusCode == 200 {
 
-		if err != nil {
-			fmt.Println(err)
-		}
+		PrintError(err)
 
-		b, err := io.ReadAll(response.Body)
-		// b, err := ioutil.ReadAll(resp.Body)  Go.1.15 and earlier
-		if err != nil {
-			log.Fatalln(err)
-		}
-		// fmt.Println(string(b))
+		b := RespErr(response)
 
 		var standings []playerStruct
 		if err := json.Unmarshal(b, &standings); err != nil { // Parse []byte to the go struct pointer
 			fmt.Println("Can not unmarshal JSON")
 		}
-		
+
 		standings = append(standings, player)
 
-		sort.SliceStable(standings, func(i, j int) bool{
-   			return standings[i].Score > standings[j].Score
+		sort.SliceStable(standings, func(i, j int) bool {
+			return standings[i].Score > standings[j].Score
 		})
 
 		fmt.Println("-------------------The Results------------------")
 		for i := 0; i < len(standings); i++ {
-			fmt.Println(strconv.Itoa(i+1)+") "+standings[i].Name+":"+strconv.Itoa(standings[i].Score))
-		} 
+			fmt.Println(strconv.Itoa(i+1) + ") " + standings[i].Name + ":" + strconv.Itoa(standings[i].Score))
+		}
 	}
 }
 
@@ -134,8 +133,6 @@ func promptGetInput(pc promptContent) string {
 		fmt.Printf("Prompt failed %v\n", err)
 		os.Exit(1)
 	}
-
-	//fmt.Printf("Input: %s\n", result)
 
 	return result
 }
